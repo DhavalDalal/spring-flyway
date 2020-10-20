@@ -42,7 +42,7 @@ test {
 }
 
 flyway {
-	url = 'jdbc:mysql://localhost:3306/flywaydemo?useSSL=false'
+	url = 'jdbc:mysql://localhost:3306/flywaydemo?allowPublicKeyRetrieval=true&useSSL=false'
 	user = 'springuser'
 	password = 'ThePassword'
 	schemas = ['flywaydemo']

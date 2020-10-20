@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/flywaydemo?allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/flywaydemo?allowPublicKeyRetrieval=false&useSSL=true
     password: ThePassword
     username: springuser
 #    driver-class-name: "com.mysql.jdbc.Driver"
