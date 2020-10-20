@@ -1,4 +1,16 @@
 show databases;
+--  +--------------------+
+--  | Database           |
+--  +--------------------+
+--  | flywaydemo         |
+--  | information_schema |
+--  | mysql              |
+--  | performance_schema |
+--  | sys                |
+--  +--------------------+
+
+use flywaydemo;
+--  Database changed
 
 show tables;
 --  +----------------------+
