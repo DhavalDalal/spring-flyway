@@ -1,2 +1,0 @@
-ALTER TABLE `users`
-  ADD COLUMN `birthdate` DATETIME DEFAULT NULL;

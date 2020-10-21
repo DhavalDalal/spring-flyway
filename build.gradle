@@ -52,3 +52,21 @@ flyway {
 //			'otherplaceholder': 'value123'
 //	]
 }
+
+// To reload on changing a static file, we need a way to copy
+// the changed files into the classpath of the running app.
+task reload(type: Copy) {
+	from 'src/main/resources'
+	into 'build/resources/main'
+	include 'static/**'
+	include 'templates/**'
+	include 'custom/**'
+}
+
+// To pass arguments while running our application using Gradle
+// Plugin, we need to configure our bootRun task:
+// Usage on command line:
+// gradle bootRun -Dserver.port=10002 -DcustomArgument=custom
+bootRun {
+	systemProperties = System.properties
+}

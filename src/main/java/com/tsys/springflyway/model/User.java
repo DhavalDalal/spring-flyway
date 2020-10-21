@@ -12,14 +12,22 @@ import java.util.Date;
 @AllArgsConstructor
 @Data
 @NoArgsConstructor
+
+// To start with the user object has only 3 fields
+// We use Hibernate ddl-auto: create mechanism to create the
+// tables: user and hibernate_sequence as a part of this initial
+// state.
 public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
-  private Integer id;
+  private Long id;
   
   private String name;
 
   private String email;
 
-  private Date birthdate;
+  // Step 1. Comment line - No birthdate field
+  // Step 2. We make schema changes to add birthdate field
+  //         and uncomment the line below:
+  //  private Date birthdate;
 }

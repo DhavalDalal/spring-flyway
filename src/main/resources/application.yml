@@ -8,15 +8,28 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
-#     This causes Hibernate to validate the schema to see if it
-#     matches with what’s defined in Java. If no match is found,
-#     the application will not start.
-     ddl-auto: validate
+#      Valid values are:
+#      ddl-auto: validate | update | create | create-drop
+#
+#      Interpretation:
+#      validate: validate the schema, makes no changes to the database.
+#      update: update the schema.
+#      create: creates the schema, destroying previous data.
+#      create-drop: drop the schema when the SessionFactory is closed explicitly, typically when the application is stopped.
+#      none: does nothing with the schema, makes no changes to the database
 
-#      Need this to create hibernate_sequence table, else direct validate fails.
-#      Run this first and then the above one - ddl-auto: validate.
-#      ddl-auto: update
+#     Step 1. Need this to create hibernate_sequence table, else direct validate
+#             fails. Run this first and then the next one - ddl-auto: validate.
+      ddl-auto: update
+#
+#
+#     Step 2.  This causes Hibernate to validate the schema to see if it
+#              matches with what’s defined in Java. If no match is found,
+#              the application will not start.
+#     ddl-auto: validate
+
   flyway:
-#    custom table name  (default is flyway_schema_history)
+#   put your custom table name  (default is flyway_schema_history).  In our case
+#   it is schema_version
     table: schema_version
     enabled: true
