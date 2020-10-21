@@ -32,4 +32,4 @@ spring:
 #   put your custom table name  (default is flyway_schema_history).  In our case
 #   it is schema_version
     table: schema_version
-    enabled: true
+    enabled: false
