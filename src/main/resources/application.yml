@@ -33,3 +33,37 @@ spring:
 #   it is schema_version
     table: schema_version
     enabled: false
+    schemas: flywaydemo
+    # If you want to spin up a new DB instance in another environment, Flyway can do it
+    # for you in a breeze. At application startup, it tries to establish a connection to
+    # the database. It will throw an error if it is not able to.
+    #
+    # It helps you evolve your database schema easily and is reliable in all instances.
+    # There is no need to execute the database scripts manually.
+
+    # Every time the need to upgrade the database arises, whether it is the schema
+    # (DDL) or reference data (DML), you can simply create a new migration script
+    # with a version number higher than the current one. When Flyway starts, it will find the new script and upgrade the database accordingly.
+
+    # Flyway scans the file system and sorts them based on their version number.
+    # Flyway creates a table name ' schema_version ' in your database.
+    # This table is responsible for tracking the state of the database and keeps an
+    # explicit record for the various SQL scripts that have been executed.
+    # As each migration gets applied, the schema history table is updated.
+    # Since we were trying to make schema changes by introducing Flyway on an already
+    # existing database containing a table, it threw an application error.
+    # There is no existing 'schema_version' table in the database, hence Flyway
+    # was not able to track the state of the database and execute the correct
+    # SQL scripts from the application repository.
+
+    # However, if there was no existing database and we were building the schema from
+    # scratch for the first time, this would not have been a problem.
+    # Flyway would have successfully created the database and executed the schema changes.
+    #
+    # If your application is already running in production, dropping the table,
+    # letting Flyway recreate the new table and the 'schema-version' table,
+    # and populating the data in the existing table is not possible.
+
+    # To intimate Flyway that it is dealing with a database with existing tables. You can do
+    # that by explicitly setting the flyway baseline-on-migrate property to True
+    baseline-on-migrate: true
