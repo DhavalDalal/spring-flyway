@@ -1,15 +1,16 @@
 plugins {
-	id 'org.springframework.boot' version '2.3.2.RELEASE'
-	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
-	id "org.flywaydb.flyway" version "6.5.3"
+	id 'org.springframework.boot' version '3.2.3'
+	id "io.spring.dependency-management" version "1.1.4"
+//	id "org.flywaydb.flyway" version "6.5.3"
+	id "org.flywaydb.flyway" version "10.9.0"
 	id 'java'
 	id 'idea'
 	id 'eclipse'
 }
 
 group = 'com.tsys'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+version = '0.0.1'
+sourceCompatibility = '17'
 
 configurations {
 	compileOnly {
@@ -22,12 +23,14 @@ repositories {
 }
 
 dependencies {
+//	classpath 'gradle.plugin.org.flywaydb:gradle-plugin-publishing:10.9.0'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	compileOnly 'org.projectlombok:lombok'
-	compile("org.springframework.boot:spring-boot-starter-data-jpa")
-	compile('mysql:mysql-connector-java:8.0.13')
-	compile('org.flywaydb:flyway-core')
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'mysql:mysql-connector-java:8.0.13'
+	implementation 'org.flywaydb:flyway-core:10.9.0'
+	implementation 'org.flywaydb:flyway-mysql:10.9.0'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	annotationProcessor 'org.projectlombok:lombok'

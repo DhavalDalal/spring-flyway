@@ -6,7 +6,8 @@ spring:
 #    driver-class-name: "com.mysql.jdbc.Driver"
 #    driver-class-name: "com.mysql.cj.jdbc.Driver"
   jpa:
-    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+#    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
 #      Valid values are:
 #      ddl-auto: validate | update | create | create-drop
