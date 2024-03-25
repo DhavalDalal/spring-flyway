@@ -677,13 +677,13 @@ Execution failed for task ':flywayUndo'.
   Download Redgate Edition for free: https://rd.gt/3GGIXhh
 ```
 
-1. Either download Flyway from the above link or you can use the binary provided [here](bin) in for your OS.  Explode 
-   and add it to your ```PATH```, so that it is available on your command line.
+1. Either download Flyway binaries for your OS from the above link, place them in the ```bin``` folder and run ```./setup_flyway_cli.sh```.  
+   Alternatively, explode and add it to your ```PATH```, so that it is available on your command line.
 2. Flyway will look at the project root for picking up ```flyway.conf``` for configuration parameters.  The project 
    root the directory from where we will be running Flyway all the times. 
    I've set-up the file according to the needs of this project.
-3. Run ```flyway list-engines``` to give you the list of supported databases by Flyway.
-4. Run ```flyway info``` or ```flyway info -X``` to see the debug output.  You should see:
+3. Run ```./flyway list-engines``` to give you the list of supported databases by Flyway.
+4. Run ```./flyway info``` or ```./flyway info -X``` to see the debug output.  You should see:
    ```
    Schema version: 3
    +-----------+---------+---------------------------------------+----------+---------------------+----------+----------+
@@ -695,7 +695,7 @@ Execution failed for task ':flywayUndo'.
    +-----------+---------+---------------------------------------+----------+---------------------+----------+----------+
    ```
 5. Now, copy the undo files U2 and U3 corresponding to V2 and V3 migrations respectively from the ```pristine``` into 
-   ```migration``` folder and then run ```flyway info```.  You should see the ```Undoable``` column status change 
+   ```migration``` folder and then run ```./flyway info```.  You should see the ```Undoable``` column status change 
    for versions 2 and 3 as ```Yes``` as opposed to earlier ```No```:
     ```
     Schema version: 3
@@ -708,7 +708,7 @@ Execution failed for task ':flywayUndo'.
     +-----------+---------+---------------------------------------+----------+---------------------+----------+----------+
     ```
 
-6. Now lets undo only the last version 3 using ```flyway undo -target=3```.  When you do that you may get the following error message, if you have not 
+6. Now lets undo only the last version 3 using ```./flyway undo -target=3```.  When you do that you may get the following error message, if you have not 
    registered to teams trial:
    ```
    ERROR: Unexpected error
@@ -722,8 +722,8 @@ Execution failed for task ':flywayUndo'.
     at org.flywaydb.commandline.Main.executeFlyway(Main.java:171)
     at org.flywaydb.commandline.Main.main(Main.java:114)
    ```
-7. Run ```flyway auth -startTeamsTrial -IAgreeToTheEul``` and do the needful to get the License key in your email.
-8. Run ```flyway undo -target=3 -X```
+7. Run ```./flyway auth -startTeamsTrial -IAgreeToTheEul``` and do the needful to get the License key in your email.
+8. Run ```./flyway undo -target=3 -X```
     ```
     Flyway Teams Edition 10.10.0 by Redgate
     Licensed to ...
@@ -734,7 +734,7 @@ Execution failed for task ':flywayUndo'.
     Undoing migration of schema `flywaydemo` to version 3 - Set Birth Date To DefaultZeroValue
     Successfully undid 1 migration to schema `flywaydemo`, now at version v2 (execution time 00:00.097s)
     ```
-9. Run ```flyway info```
+9. Run ```./flyway info```
     ```
     Flyway Teams Edition 10.10.0 by Redgate
     Licensed to ...
@@ -767,7 +767,7 @@ Execution failed for task ':flywayUndo'.
 10. Verify from the application API by running the script:
         [01_get_all_users.sh](src%2Fmain%2Fresources%2Fshell_scripts%2F01_get_all_users.sh)
 
-11. Let's rollback one more version: Run ```flyway undo target=2```
+11. Let's rollback one more version: Run ```./flyway undo target=2```
     ```
     Flyway Teams Edition 10.10.0 by Redgate
     Licensed to ...
@@ -778,7 +778,7 @@ Execution failed for task ':flywayUndo'.
     Undoing migration of schema `flywaydemo` to version 2 - Alter User Table Add BirthDate Column
     Successfully undid 1 migration to schema `flywaydemo`, now at version v1 (execution time 00:00.102s)
     ```
-    and now run ```flyway info```, you should see:
+    and now run ```./flyway info```, you should see:
 
     ```
     Flyway Teams Edition 10.10.0 by Redgate
