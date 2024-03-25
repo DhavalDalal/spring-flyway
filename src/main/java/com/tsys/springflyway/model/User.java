@@ -1,10 +1,10 @@
 package com.tsys.springflyway.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
 import java.util.Date;
 
 @Entity // This tells Hibernate to make a table out of this class
@@ -21,6 +21,9 @@ public class User {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
+
+  @Version
+  private Long version;
   
   private String name;
 
