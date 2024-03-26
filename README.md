@@ -74,17 +74,19 @@ automating the deployment of database changes.  It has following features:
 startup.
 
 ## Prepare MySQL Database
+### Using Local Installation of MySQL Server
 1. Run the following commands after starting the mysql server using
 ```mysql.server start``` on the CLI or if you are using Docker ```mysql``` Container.  
     Make sure you run it with correct privileges.
 2. Run mysql client on the CLI using ```mysql```.  It will take you to the ```mysql>``` prompt.
 3. Run the commands below to create database and grant rights to the user
 
-	```
-	mysql> create database flywaydemo; -- Creates the new database
-	mysql> create user 'springuser'@'%' identified by 'ThePassword'; -- Creates the user
-	mysql> grant all on flywaydemo.* to 'springuser'@'%'; -- Gives all privileges to the new user on the newly created database
-	```
+    ```
+    mysql> create database flywaydemo; -- Creates the new database
+    mysql> create user 'springuser'@'%' identified by 'ThePassword'; -- Creates the user
+    mysql> grant all on flywaydemo.* to 'springuser'@'%'; -- Gives all privileges to the new user on the newly created database
+    mysql> flush privileges; -- let the rights take effect immediately
+    ```
 	OR 
 	
     Execute the Script:  [01_create_db_and_user.sql](src%2Fmain%2Fresources%2Fset-and-cleanup-db%2F01_create_db_and_user.sql)
@@ -122,6 +124,47 @@ startup.
 	mysql> show tables;
 	Empty set (0.01 sec)
 	```
+
+### Using Docker Image of MySQL Server
+1. Pull the latest image of MySQL Server ```docker pull mysql/mysql-server:latest```
+2. Run the Image:
+    1. Using Docker Desktop, Start the image and in the Optional Settings:
+       1. Ports section: add ```3306``` against ```3306/tcp```, add ```33060``` against ```33060/tcp```, 
+          and add ```33061``` against ```33061/tcp```.
+       2. Environmental Variable section: Add 2 environmental variables
+          1. ```MYSQL_USER``` ```root```
+          2. ```MYSQL_ROOT_PASSWORD``` ```root``` 
+       3. In EXEC tab of the running container (which opens a shell),
+          create Database and User in the Container by executing steps 2, 3 and 4 from the above [section](#using-local-installation-of-mysql-server)
+            ```
+            sh> mysql -u root -p
+            Enter Password:
+            mysql>
+            ```
+    2. Using the following command on CLI: 
+       1. ```docker run -p 3306:3306 -p 33060:33060 -p 33061:33061 --name flywaydemo_container mysql/mysql-server:latest```
+       2. Look at the line in the console output for ```[Entrypoint] GENERATED ROOT PASSWORD: <Password>```.  
+          Copy that password.
+       3. From another terminal, let us connect to the container using shell:
+            ```
+            docker run -it --rm flywaydemo_container bash
+            sh> mysql -u root -p
+            Enter Password: <Paste the above generated password>
+            mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
+            mysql> exit
+            
+            sh> mysql -u root -p
+            Enter Password: root
+            mysql> 
+            ```
+       4. Create Database and User in the Container by executing steps 2, 3 and 4 from the above [section](#using-local-installation-of-mysql-server)
+       
+4. Connect to the Container from CLI on localhost from outside the container:
+    ```mysql -h localhost --protocol=tcp -u springuser -p ThePassword```
+
+**NOTE:** Though not advisable, in case you want root access from outside the container, 
+you will need to fire the query ```UPDATE mysql.user SET host='%' WHERE user='root';``` from within 
+the container ```mysql``` session and then connect from CLI on localhost using ```mysql -h localhost --protocol=tcp -u root -p``` 
 
 ## Running the application without Flyway
 * Simulating an application without Flyway

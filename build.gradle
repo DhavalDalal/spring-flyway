@@ -75,6 +75,7 @@ flyway {
 	password = 'ThePassword'
 	schemas = ['flywaydemo']
 	table = 'schema_version'
+	driver = 'com.mysql.cj.jdbc.Driver'
 //	placeholders = [
 //			'keyABC': 'valueXYZ',
 //			'otherplaceholder': 'value123'

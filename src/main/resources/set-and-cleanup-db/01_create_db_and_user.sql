@@ -49,4 +49,5 @@ select user, host from mysql.user;
 -- Gives all privileges to the new user on the newly created database
 grant all on flywaydemo.* to 'springuser'@'%';
 
+-- Let the rights take effect immediately
 FLUSH PRIVILEGES;
