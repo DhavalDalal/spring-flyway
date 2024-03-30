@@ -231,16 +231,16 @@ the container ```mysql``` session and then connect from CLI on localhost using `
       1. ```00_create_few_users.sh``` to create few users in the database.
       2. ```01_get_all_users.sh``` to verify that the users are created.
       3. Verify in the database as well:
-		  ```
-		  mysql> select * from users;
-		  +----+--------------+--------+---------+
-		  | id | email        | name   | version |
-		  +----+--------------+--------+---------+
-		  |  1 | B@Brahma.com | Brahma |       0 |
-		  |  2 | V@Vishnu.com | Vishnu |       0 |
-		  |  3 | M@Mahesh.com | Mahesh |       0 |
-		  +----+--------------+--------+---------+
-		  ```
+         ```
+         mysql> select * from users;
+         +----+------------+------------------------+---------+
+         | id | email      | name                   | version |
+         +----+------------+------------------------+---------+
+         |  1 | B@tsys.com | Brahma Supreme Creator |       0 |
+         |  2 | V@tsys.com | Vishnu S. Maintainer   |       0 |
+         |  3 | M@tsys.com | Mahesh Destroyer       |       0 |
+         +----+------------+------------------------+---------+
+         ```
   
 * Let's say we now want to deploy this application in production, so we create a sql script, 
   say ```Create_User_Table.sql```  that will be applied to the production database:
@@ -567,13 +567,13 @@ schema change by Hibernate would stop.
 	+-----------+--------------+------+-----+---------+-------+
     
     mysql> select * from users;
-    +----+--------------+--------+---------+-----------+
-    | id | email        | name   | version | birthdate |
-    +----+--------------+--------+---------+-----------+
-    |  1 | B@Brahma.com | Brahma |       0 | NULL      |
-    |  2 | V@Vishnu.com | Vishnu |       0 | NULL      |
-    |  3 | M@Mahesh.com | Mahesh |       0 | NULL      |
-    +----+--------------+--------+---------+-----------+
+    +----+------------+------------------------+---------+-----------+
+    | id | email      | name                   | version | birthdate |
+    +----+------------+------------------------+---------+-----------+
+    |  1 | B@tsys.com | Brahma Supreme Creator |       0 | NULL      |
+    |  2 | V@tsys.com | Vishnu S. Maintainer   |       0 | NULL      |
+    |  3 | M@tsys.com | Mahesh Destroyer       |       0 | NULL      |
+    +----+------------+------------------------+---------+-----------+
 	```
  
 8. Verify from the application API by running the script:
@@ -683,13 +683,13 @@ We want to set birth date to default zero value.
 11. Verify this column in the user table in the database.
     ```
     mysql> select * from users;
-    +----+--------------+--------+---------+---------------------+
-    | id | email        | name   | version | birthdate           |
-    +----+--------------+--------+---------+---------------------+
-    |  1 | B@Brahma.com | Brahma |       1 | 1000-01-01 00:00:00 |
-    |  2 | V@Vishnu.com | Vishnu |       1 | 1000-01-01 00:00:00 |
-    |  3 | M@Mahesh.com | Mahesh |       1 | 1000-01-01 00:00:00 |
-    +----+--------------+--------+---------+---------------------+
+    +----+------------+------------------------+---------+---------------------+
+    | id | email      | name                   | version | birthdate           |
+    +----+------------+------------------------+---------+---------------------+
+    |  1 | B@tsys.com | Brahma Supreme Creator |       1 | 1000-01-01 00:00:00 |
+    |  2 | V@tsys.com | Vishnu S. Maintainer   |       1 | 1000-01-01 00:00:00 |
+    |  3 | M@tsys.com | Mahesh Destroyer       |       1 | 1000-01-01 00:00:00 |
+    +----+------------+------------------------+---------+---------------------+
     ```
 12. Verify from the application API by running the script:
        [01_get_all_users.sh](src%2Fmain%2Fresources%2Fshell_scripts%2F01_get_all_users.sh)
@@ -798,13 +798,13 @@ Execution failed for task ':flywayUndo'.
     and check the mysql database:
     ```
     mysql> select * from users;
-    +----+--------------+--------+---------+-----------+
-    | id | email        | name   | version | birthdate |
-    +----+--------------+--------+---------+-----------+
-    |  1 | B@Brahma.com | Brahma |       0 | NULL      |
-    |  2 | V@Vishnu.com | Vishnu |       0 | NULL      |
-    |  3 | M@Mahesh.com | Mahesh |       0 | NULL      |
-    +----+--------------+--------+---------+-----------+
+    +----+------------+------------------------+---------+-----------+
+    | id | email      | name                   | version | birthdate |
+    +----+------------+------------------------+---------+-----------+
+    |  1 | B@tsys.com | Brahma Supreme Creator |       0 | NULL      |
+    |  2 | V@tsys.com | Vishnu S. Maintainer   |       0 | NULL      |
+    |  3 | M@tsys.com | Mahesh Destroyer       |       0 | NULL      |
+    +----+------------+------------------------+---------+-----------+
     ```  
 
 10. Verify from the application API by running the script:
@@ -844,17 +844,55 @@ Execution failed for task ':flywayUndo'.
     and Check the mysql database: 
     ```
     mysql> select * from users;
-    +----+--------------+--------+---------+
-    | id | email        | name   | version |
-    +----+--------------+--------+---------+
-    |  1 | B@Brahma.com | Brahma |       0 |
-    |  2 | V@Vishnu.com | Vishnu |       0 |
-    |  3 | M@Mahesh.com | Mahesh |       0 |
-    +----+--------------+--------+---------+
+    +----+------------+------------------------+---------+
+    | id | email      | name                   | version |
+    +----+------------+------------------------+---------+
+    |  1 | B@tsys.com | Brahma Supreme Creator |       0 |
+    |  2 | V@tsys.com | Vishnu S. Maintainer   |       0 |
+    |  3 | M@tsys.com | Mahesh Destroyer       |       0 |
+    +----+------------+------------------------+---------+
     ```
     
 12. Verify from the application API by running the script:
     [01_get_all_users.sh](src%2Fmain%2Fresources%2Fshell_scripts%2F01_get_all_users.sh)
+
+### Implement the database part of the Story
+
+```
+When an approval/rejection is made
+the system sends confirmation email to the user,
+So that the system can comply with government regulatory requirements.
+```
+
+Currently, the Name field contains names in the format - ```<first name> [middle name or initial] <last name>```.  This
+needs to be split into 3 fields in the database to implement the above story as the confirmation message
+greets the user with first name only, though all the details exist.  In order to do this,
+
+You will need to modify the User object to include a domain rich abstraction - ```Name``` already provided
+in the ```com.tsys.springflyway.model``` package.  Accordingly modify the existing database schema and data to implement
+this story.  After implementation of the story, you will need to remove the old ```name``` column from the 
+database - contraction phase.  Accordingly, use Flyway to achieve both the expansion and contraction of the schema and 
+data integrity.
+
+```
+@Entity
+public class User {
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private Long id;
+
+  @Version
+  private Long version;
+  
+  @Embedded
+  private Name name;
+
+  private String email;
+
+  private Date birthdate;
+}
+```
+
 
 ### Reference Documentation
 For further reference, please consider the following sections:
