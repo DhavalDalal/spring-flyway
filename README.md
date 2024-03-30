@@ -399,7 +399,7 @@ Make sure you create that folder.
 **NOTE:** In earlier versions of Flyway, we used to create a baseline SQL script to Baseline the existing schema:
 SQL script ```V1__Baseline.sql``` would have just one line:
 
-```
+```mysql-sql
 select now();
 ```
 
@@ -411,7 +411,7 @@ We could have started with a clean slate in the database, but it is very straigh
 start of the project. Let's create that starting context.
 
 1. Drop the ```users``` and the ```users_seq``` tables and also ```schema_version``` from the earlier run:
-    ```
+    ```mysql-sql
     mysql> drop table users;
     mysql> drop table users_seq;
     mysql> drop table schema_version;
@@ -503,7 +503,7 @@ schema change by Hibernate would stop.
 
 2. Add the new ```birthDate``` field in ```User```
 
-    ```
+    ```java
     public class User {
       @Id
       @GeneratedValue(strategy = GenerationType.AUTO)
@@ -856,7 +856,7 @@ Execution failed for task ':flywayUndo'.
 12. Verify from the application API by running the script:
     [01_get_all_users.sh](src%2Fmain%2Fresources%2Fshell_scripts%2F01_get_all_users.sh)
 
-### Implement the database part of the Story
+## Implement the database part of the Story
 
 ```
 When an approval/rejection is made
@@ -874,7 +874,9 @@ this story.  After implementation of the story, you will need to remove the old 
 database - contraction phase.  Accordingly, use Flyway to achieve both the expansion and contraction of the schema and 
 data integrity.
 
-```
+```java
+import jakarta.persistence.Embedded;
+
 @Entity
 public class User {
   @Id
