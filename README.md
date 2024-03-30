@@ -861,7 +861,7 @@ Execution failed for task ':flywayUndo'.
 ```
 When an approval/rejection is made
 the system sends confirmation email to the user,
-So that the system can comply with government regulatory requirements.
+So that the business complies with government regulatory requirements.
 ```
 
 Currently, the Name field contains names in the format - ```<first name> [middle name or initial] <last name>```.  This
