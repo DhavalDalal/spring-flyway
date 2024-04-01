@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
 @Entity // This tells Hibernate to make a table out of this class
 @Table(name = "users")
 @AllArgsConstructor
@@ -33,4 +31,9 @@ public class User {
   // Step 2. We make schema changes to add birthdate field
   //         and uncomment the line below:
   //  private Date birthdate;
+
+  public void updateFrom(User user) {
+    name = user.name;
+    email = user.email;
+  }
 }
