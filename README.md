@@ -183,7 +183,9 @@ the container ```mysql``` session and then connect from CLI on localhost using `
 	            ddl-auto: update
 	    ```
     
-* Start the application ```$> ./gradlew bootRun```    
+* Start the application ```$> ./gradlew bootRun``` and point the browser to 
+  ```http://localhost:8080``` It will open the ```index.html```.  You can hit 
+  the "Ping" button to check the application.    
 * This creates the following tables in the ```flywaydemo``` schema
 
    ```
@@ -528,16 +530,17 @@ schema change by Hibernate would stop.
 	```
 4. Run ```./gradlew flywayInfo``` and it shows that the new script is pending to be applied to the database
 
-	```
-	Schema version: 1
+    ```
+    Schema version: 1
     +-----------+---------+-----------------------------------------------+------+---------------------+---------+----------+
     | Category  | Version | Description                                   | Type | Installed On        | State   | Undoable |
     +-----------+---------+-----------------------------------------------+------+---------------------+---------+----------+
     |           | 1       | << Flyway Baseline >>                         | BASELINE | 2024-03-22 20:55:36 | Baseline | No       |
-	| Versioned | 2       | Alter User Table Add BirthDate Column         | SQL      |                     | Pending  |
-	+-----------+---------+---------------------------------------+----------+---------------------+----------+
-	```
-   Woo Hoo! Our first SQL script is under Flyway's versioning scheme.
+    | Versioned | 2       | Alter User Table Add BirthDate Column         | SQL      |                     | Pending  |
+    +-----------+---------+---------------------------------------+----------+---------------------+----------+
+    ```
+
+    Woo Hoo! Our first SQL script is under Flyway's versioning scheme.
 
 5. Now, Run ```./gradlew flywayMigrate``` to migrate the schema changes. 
 6. To verify that this was also under Flyway, run ```./gradlew flywayInfo```.  It shows that it is at Schema version 2   
@@ -554,17 +557,17 @@ schema change by Hibernate would stop.
 
 7. Verify this column in the user table in the database.
 
-	```
-	mysql> desc users;
-	+-----------+--------------+------+-----+---------+-------+
-	| Field     | Type         | Null | Key | Default | Extra |
-	+-----------+--------------+------+-----+---------+-------+
-	| id        | bigint       | NO   | PRI | NULL    |       |
-	| email     | varchar(255) | YES  |     | NULL    |       |
-	| name      | varchar(255) | YES  |     | NULL    |       |
+    ```
+    mysql> desc users;
+    +-----------+--------------+------+-----+---------+-------+
+    | Field     | Type         | Null | Key | Default | Extra |
+    +-----------+--------------+------+-----+---------+-------+
+    | id        | bigint       | NO   | PRI | NULL    |       |
+    | email     | varchar(255) | YES  |     | NULL    |       |
+    | name      | varchar(255) | YES  |     | NULL    |       |
     | version   | bigint       | NO   |     | 0       |       |
-	| birthdate | datetime     | YES  |     | NULL    |       |
-	+-----------+--------------+------+-----+---------+-------+
+    | birthdate | datetime     | YES  |     | NULL    |       |
+    +-----------+--------------+------+-----+---------+-------+
     
     mysql> select * from users;
     +----+------------+------------------------+---------+-----------+
@@ -574,7 +577,7 @@ schema change by Hibernate would stop.
     |  2 | V@tsys.com | Vishnu S. Maintainer   |       0 | NULL      |
     |  3 | M@tsys.com | Mahesh Destroyer       |       0 | NULL      |
     +----+------------+------------------------+---------+-----------+
-	```
+    ```
  
 8. Verify from the application API by running the script:
     [01_get_all_users.sh](src%2Fmain%2Fresources%2Fshell_scripts%2F01_get_all_users.sh)
