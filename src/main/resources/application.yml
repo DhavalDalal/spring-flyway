@@ -67,4 +67,4 @@ spring:
 
     # To intimate Flyway that it is dealing with a database with existing tables. You can do
     # that by explicitly setting the flyway baseline-on-migrate property to True
-    baseline-on-migrate: true
+    baseline-on-migrate: false
