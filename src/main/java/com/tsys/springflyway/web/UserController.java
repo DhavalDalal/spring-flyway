@@ -67,7 +67,7 @@ public class UserController {
     //     (such as English) in the response body that explains why the PUT failed. (RFC 2616 Section 10.4)
 
     LOG.info(String.format("Got PUT Request for Id = %s, User = %s", id, user));
-    Long userId = id.isEmpty() ? 0L : id.get();
+    Long userId = id.orElse(0L);
     try {
       LOG.info(String.format("Getting User with Id = %d from database...", userId));
       final User userFromDatabase = repository.getReferenceById(userId);

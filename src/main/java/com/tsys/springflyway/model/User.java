@@ -35,5 +35,6 @@ public class User {
   public void updateFrom(User user) {
     name = user.name;
     email = user.email;
+    //birthdate = user.birthdate;
   }
 }

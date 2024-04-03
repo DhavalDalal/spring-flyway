@@ -130,7 +130,7 @@
 			"response": []
 		},
 		{
-			"name": "Update A User That Updates",
+			"name": "Update A User That Exists",
 			"event": [
 				{
 					"listen": "test",
@@ -151,7 +151,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"name\": \"Radha Beloved\",\n    \"email\": \"radha@heaven.com\"\n}",
+					"raw": "{\n    \"name\": \"Radha's Beloved\",\n    \"email\": \"radhakrishna@heaven.com\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -179,7 +179,7 @@
 			"response": []
 		},
 		{
-			"name": "Update A User That Creates",
+			"name": "Update A User That Does Not Exist (Creates a New User)",
 			"event": [
 				{
 					"listen": "test",
