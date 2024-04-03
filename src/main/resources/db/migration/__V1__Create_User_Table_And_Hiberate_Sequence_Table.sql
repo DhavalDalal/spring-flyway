@@ -12,10 +12,3 @@ CREATE TABLE `users_seq` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO users_seq (next_val) VALUES (1);
-
---------------------------------------------------------------------
--- UNDO Script
---------------------------------------------------------------------
--- DROP TABLE `users`;
--- DROP TABLE `users_seq`;
--- DELETE FROM schema_version WHERE installed_rank=1;
