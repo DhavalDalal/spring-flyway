@@ -1,11 +1,17 @@
 package com.tsys.springflyway.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class Name {
+  @Column(name = "first_name")
   public final String first;
+
+  @Column(name = "middle_name")
   public final String middle;
+
+  @Column(name = "last_name")
   public final String last;
 
   private Name() {
