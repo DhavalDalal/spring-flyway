@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 // state.
 public class User {
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE)
   private Long id;
 
   @Version
