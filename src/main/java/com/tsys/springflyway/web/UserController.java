@@ -4,29 +4,29 @@ import com.tsys.springflyway.model.User;
 import com.tsys.springflyway.model.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.OptimisticLockException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/users")
+@Slf4j
 public class UserController {
-
-  private static final Logger LOG = Logger.getLogger(UserController.class.getSimpleName());
 
   @Autowired
   private UserRepository repository;
 
-
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity create(@RequestBody User user) {
-    LOG.info(String.format("Got POST Request for User = %s", user));
+    log.info(String.format("Got POST Request for User = %s", user));
     return ResponseEntity.ok(repository.save(user));
   }
 
@@ -66,26 +66,26 @@ public class UserController {
     //  4. HTTP status code 400 Bad Request for an unsuccessful PUT, with natural-language text
     //     (such as English) in the response body that explains why the PUT failed. (RFC 2616 Section 10.4)
 
-    LOG.info(String.format("Got PUT Request for Id = %s, User = %s", id, user));
+    log.info(String.format("Got PUT Request for Id = %s, User = %s", id, user));
     Long userId = id.orElse(0L);
     try {
-      LOG.info(String.format("Getting User with Id = %d from database...", userId));
+      log.info(String.format("Getting User with Id = %d from database...", userId));
       final User userFromDatabase = repository.getReferenceById(userId);
       userFromDatabase.updateFrom(user);
-      LOG.info(String.format("Updating in Database user with Id = %d ", userId));
+      log.info(String.format("Updating in Database user with Id = %d ", userId));
       repository.save(userFromDatabase);
       return new ResponseEntity(HttpStatusCode.valueOf(200));
     } catch (EntityNotFoundException nonExistent) {
-      LOG.info(String.format("Error: %s", nonExistent.getMessage()));
+      log.info(String.format("Error: %s", nonExistent.getMessage()));
       try {
-        LOG.info(String.format("Creating User in Database user = %s ", user));
+        log.info(String.format("Creating User in Database user = %s ", user));
         final User saved = repository.save(user);
-        LOG.info(String.format("Created User in Database user = %s ", saved));
+        log.info(String.format("Created User in Database user = %s ", saved));
         return new ResponseEntity(saved, new LinkedMultiValueMap<String, String>() {{
           put("Location", List.of(URI.create(String.format("/users/%d", user.getId())).toString()));
         }}, HttpStatusCode.valueOf(201));
       } catch (OptimisticLockException ole) {
-        LOG.info(String.format("Conflict - Could Not Update in Database user with Id = %d, Error Message = %s", userId, ole.getMessage()));
+        log.info(String.format("Conflict - Could Not Update in Database user with Id = %d, Error Message = %s", userId, ole.getMessage()));
         return new ResponseEntity("{ \"error\" : \"You seem to have a stale version of the record\"}", HttpStatusCode.valueOf(409));
       }
     }
@@ -100,12 +100,12 @@ public class UserController {
    */
   @DeleteMapping(value = {"/{id}", ""})
   public void delete(@PathVariable(required = false) Optional<Long> id) {
-    LOG.info(String.format("Got DELETE Request for Id = %s", id));
+    log.info(String.format("Got DELETE Request for Id = %s", id));
     id.ifPresentOrElse(userId -> {
-      LOG.info(String.format("Deleting User with Id = %d", userId));
+      log.info(String.format("Deleting User with Id = %d", userId));
       repository.deleteById(userId);
     }, () -> {
-      LOG.info(String.format("Deleting All Users"));
+      log.info(String.format("Deleting All Users"));
       repository.deleteAll();
     });
   }
