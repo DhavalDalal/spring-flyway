@@ -1,5 +1,6 @@
 package com.tsys.springflyway.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,6 +31,8 @@ public class User {
   // Step 1. Comment line - No birthdate field
   // Step 2. We make schema changes to add birthdate field
   //         and uncomment the line below:
+  //  @Transient
+  //  @JsonIgnore
   //  private Date birthdate;
 
   public void updateFrom(User user) {
