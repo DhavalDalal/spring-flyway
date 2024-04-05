@@ -859,6 +859,12 @@ Execution failed for task ':flywayUndo'.
 12. Verify from the application API by running the script:
     [01_get_all_users.sh](src%2Fmain%2Fresources%2Fshell_scripts%2F01_get_all_users.sh)
 
+**NOTE:**  Generally we use rollback when we immediately notice any issue during deployment/migration of the 
+new version.  However, if you have spotted a bug after running for a few days in production, a better strategy is 
+Rollforward, as the application will have user-owned data at that point in time.  So, in such cases, write a another
+pair of do-undo scripts that nullify the effect of the bug along with a new version of the ```.jar```.
+
+
 ## Implement the database part of the Story
 
 ```
