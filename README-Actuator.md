@@ -509,35 +509,191 @@ By default, the ```env``` and ```java``` contributors are disabled.
    ```
 
 ## Customizing the ```/metrics``` Endpoint
-(Reference: https://medium.com/@aleksanderkolata/spring-boot-micrometer-prometheus-and-grafana-how-to-add-custom-metrics-to-your-application-712c6f895f6b)
 
 We know that ```/metrics``` endpoint publishes information about OS and JVM as well as application-level metrics.  
 In order to gather custom metrics, we have support for:
-* Counter - a counter is a cumulative metric that represents a single value that can only be incremented/decremented 
-  or be reset to zero on restart, e.g. how many times feature A has been used.
-* Gauge - a gauge is a metric that represents a single numerical snapshot of data that can arbitrarily go up 
+* ```Counter``` - a counter is a cumulative metric that represents a single value that can only be
+  incremented/decremented or be reset to zero on restart, e.g. how many times feature A has been used.
+* ```Gauge``` - a gauge is a metric that represents a single numerical snapshot of data that can arbitrarily go up
   and down, e.g. how many users are registered-users.
-* Timer - used when you want to measure time. There are also histograms and summaries
-  e.g. how much time does request to endpoint X take on average.
+* ```Timer``` - to measure time. There are also histograms and summaries e.g. how much time does request to an
+  endpoint take on average.
+
+Spring Boot 2.0 uses Micrometer for metrics in a Spring application.  Micrometer is now part of the Actuator’s
+dependencies, so we should be good to go as long as the Actuator dependency is in the classpath.
+
+**What is Micrometer?**
+
+Micrometer provides a simple facade over the instrumentation clients for the most popular observability systems,
+allowing you to instrument your JVM-based application code without vendor lock-in. Think SLF4J, but for observability:
+* Vendor-neutral application metrics façade
+* Application metrics recorded by Micrometer are intended to be used to observe, alert, and react to
+  the current/recent operational state of your environment.
+* Metrics Façade for Amazon Cloud Watch, Elastic, Prometheus
+
+**Micrometer Concepts**
+
+Let us look at the abstractions Micrometer provides:
+* ```Meter``` - is the interface for collecting a set of measurements or metrics about the application.
+* ```MeterRegistry``` Meters in Micrometer are created from and held in a MeterRegistry.
+  Each supported monitoring system has an implementation of ```MeterRegistry```.
+* ```SimpleMeterRegistry``` - it holds the latest value of each meter in memory and does not export the data anywhere.
+  It is autowired in a Spring Boot application.
+* ```@Timed``` - An annotation that frameworks can use to add timing support to either specific types
+  of end-point methods that serve web request or to all methods.
+
+[//]: # (//In the example below, we have added @Timed annotation to the API method which exposes timing metrics on the endpoint.)
 
 We now implement custom metrics into the ```/metrics``` end-point.
 
 Let's say we want to count how many times ```/ping``` was called.  For that matter
-of fact you can choose any endpoint available in the application like the 
+of fact you can choose any endpoint available in the application like the
 login to log failed and successful attempts, count the number of downloads etc...
 
-Spring Boot 2.0 uses Micrometer for metrics in Spring.  What is Micrometer?
-Micrometer provides a simple façade over the instrumentation clients 
-for the most popular monitoring systems.
+For us the ```HomeController``` serves the ```/ping``` end-point and to this we need to add the ```Counter```
+such that we increment it each time this endpoint is called.
 
-* Vendor-neutral application metrics façade
-* Application metrics recorded by Micrometer are intended to be used to observe, alert, and react to the current/recent operational state of your environment.
-* Metrics Façade for Amazon Cloud Watch, Elastic, Prometheus
-* Custom Meter Registry - https://micrometer.io/docs/guide/customMeterRegistry
+```java
+@RestController
+@RequestMapping("/")
+public class HomeController {
 
-// Micrometer for Prometheus Maven artifact: micrometer-registryprometheus
+   public String index() {
+      return "index.html";
+   }
 
-Micrometer is now part of the Actuator’s dependencies, so we should be good to go as long as the Actuator dependency is in the classpath.
+   @GetMapping(value = "ping", produces = "application/json")
+   public ResponseEntity<String> pong() {
+      return ResponseEntity.ok(String.format("{ \"PONG\" : \"%s is running fine!\" }", getClass().getSimpleName()));
+   }
+}
+
+```
+
+But before we add the Counter to this code, we need to make sure that the Counter is created. For this let us create
+```MetricsConfig```
+
+```java
+package com.tsys.springflyway.config;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class MetricsConfig {
+
+  @Bean
+  public Counter makePingCounter(MeterRegistry meterRegistry) {
+    return Counter.builder("api.ping.get")
+        .description("a number of requests to /ping endpoint")
+        .register(meterRegistry);
+  }
+}
+```
+
+Now, we need to modify the Controller class to inject this Counter and then
+modify the ```pong()``` method to increment the counter value.
+
+```java
+@RestController
+@RequestMapping("/")
+public class HomeController {
+
+  private Counter pingCounter;
+
+  @Autowired
+  public HomeController(Counter pingCounter) {
+    this.pingCounter = pingCounter;
+  }
+
+   ...
+   ...
+   
+  @GetMapping(value = "ping", produces = "application/json")
+  public ResponseEntity<String> pong() {
+    pingCounter.increment();
+    return ResponseEntity.ok(String.format("{ \"PONG\" : \"%s is running fine!\" }", getClass().getSimpleName()));
+  }
+}
+```
+
+and we modify the ControllerSpecs to:
+
+```java
+public class HomeControllerSpecs {
+
+   ...
+   ...
+   ...
+
+   @Test
+   @Order(1)
+   public void health() {
+      // Given-When
+      final ResponseEntity<String> response = client.getForEntity("/ping", String.class);
+
+      // Then
+      assertThat(response.getStatusCode(), is(HttpStatus.OK));
+      assertThat(response.getBody(), is("{ \"PONG\" : \"HomeController is running fine!\" }"));
+   }
+
+   @Test
+   @Order(2)
+   public void incrementsPingCountByOneWhenAPingRequestIsMade() {
+      // When
+      client.getForEntity("/ping", String.class);
+
+      // Then
+      final ResponseEntity<Map> response = client.getForEntity("/actuator/metrics/api.ping.get", Map.class);
+      final List<Map<String, ?>> measurements = (List<Map<String, ?>>) response.getBody().get("measurements");
+      final double api_ping_get = (double) measurements.get(0).get("value");
+      assertThat(api_ping_get, is(2.0d));
+   }
+}
+```
+
+Note that we have Ordered the tests as the ```/ping``` request is invoked twice from this test and hence we make the
+results deterministic.
+
+Now, restart the application and go to the http://localhost:8080/actuator/metrics/api.ping.get
+end-point and you should see this:
+
+```json
+
+  "name": "api.ping.get",
+  "description": "a number of requests to /ping endpoint",
+  "measurements": [
+    {
+      "statistic": "COUNT",
+      "value": 0.0
+    }
+  ],
+  "availableTags": [
+    
+  ]
+}
+```
+
+Now, make a ping request - http://localhost:8080/ping and
+revisit http://localhost:8080/actuator/metrics/api.ping.get and you should see this:
+
+```json
+
+  "name": "api.ping.get",
+  "description": "a number of requests to /ping endpoint",
+  "measurements": [
+    {
+      "statistic": "COUNT",
+      "value": 1.0
+    }
+  ],
+  "availableTags": [
+    
+  ]
+}
+```
 
 ## Customizing the ```/health``` Endpoint
 The /health endpoint is used to check the health or state of the running application.
