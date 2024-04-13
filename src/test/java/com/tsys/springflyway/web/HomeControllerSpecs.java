@@ -10,6 +10,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.nio.charset.Charset;
@@ -24,6 +25,7 @@ import static org.hamcrest.Matchers.is;
     @Tag("In-Process"),
     @Tag("ComponentTest")
 })
+@TestPropertySource("/test.properties")
 public class HomeControllerSpecs {
 
   @Autowired
