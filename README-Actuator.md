@@ -60,6 +60,7 @@ Actuator is working:
         @Tag("In-Process"),
         @Tag("ComponentTest")
 })
+@TestPropertySource("/test.properties")
 public class SpringFlywayActuatorTest {
 
     @Autowired
