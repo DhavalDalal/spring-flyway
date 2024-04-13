@@ -471,6 +471,7 @@ By default, the ```env``` and ```java``` contributors are disabled.
            @Tag("In-Process"),
            @Tag("ComponentTest")
    })
+   @TestPropertySource("/test.properties")
    public class SpringFlywayActuatorTest {
    
      ...
@@ -1066,6 +1067,42 @@ and you should see:
   },
 }
 ```
+But if you run all the tests you will find that the ```actuatorHealthEnpointWorks()``` test in the
+```SpringBootActuatorTest``` fails as it is not able to find http://localhost:8080 during the test run.  
+This happens because the ```@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)``` we are
+testing this url against the static port: ```8080``` injected from  ```application.remote.service.port``` in the  
+```application.properties``` file.  So, we need to inject the random port number which the Spring Boot Test
+starts.  Here is how we do it.  Add the below to the ```SpringBootActuatorTest``` leaving other tests as is:
+
+```java
+public class SpringFlywayActuatorTest {
+  
+   ...
+   ...
+   
+   // Inject which port we were assigned from the above random port
+   @Value("${local.server.port}")
+   private int port;
+
+   @Autowired
+   private ApplicationContext context;
+
+   @BeforeEach
+   public void setupServiceHealthIndicator() throws NoSuchFieldException, IllegalAccessException {
+      final ServiceHealthIndicator bean = context.getBean(ServiceHealthIndicator.class);
+      final Field portField = ServiceHealthIndicator.class.getDeclaredField("servicePort");
+      portField.setAccessible(true);
+      portField.set(bean, port);
+   }
+
+   ...
+   ...   
+   
+}
+```
+
+Now, all the tests will be green.
+
 
 We add the remaining success test where it can connect to the upstream service:
 
