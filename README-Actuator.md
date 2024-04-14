@@ -278,6 +278,48 @@ To check whether DEBUG is enabled or not, go to: http://localhost:8080/actuator/
 Likewise, you can change other loggers that are only specific to your package(s) by simply changing the name in
 the above URL.
 
+## The ```/flyway``` Endpoint
+If you have Flyway in your application, then all you need to do do is simply add the following
+to ```application.properties```:
+
+```properties
+management.endpoint.flyway.enabled = true
+management.endpoints.web.exposure.include = ..., ..., flyway
+```
+Make sure that Flyway is also enabled in the ```application.properties```:
+```properties
+spring.flyway.enabled = true
+```
+
+Once you start the application and hit the http://localhost:8080/actuator/flyway, you will see
+all the migrations.
+
+**NOTE:** In case you get an error while starting the application that says -
+```No Enum Constant found for UNDO_SQL```, then go to the backend ```schema_version``` table and
+issue the following query:
+
+```mysql-sql
+DELETE FROM schema_version WHERE type = 'UNDO_SQL';
+```
+and then restart the application and hit the flyway actuator end-point.
+
+## Configuring Endpoints
+```management.endpoint.<name>``` prefix uniquely identifies the endpoint
+that is being configured.
+
+Each endpoint can be customized with properties using the format
+```management.endpoint.<name>.<property to customize>```.
+
+For Example:
+```properties
+management.endpoint.env.enabled = true
+management.endpoint.env.show-values = WHEN_AUTHORIZED
+management.endpoint.env.roles = admin
+```
+
+And finally to expose it over web, use the prefix
+```management.endpoints.web.exposure.include = <name1>, <name2>, ...```
+
 ## Customizing the ```/info``` Endpoint
 If you go to the ```http://localhost:8080/actuator/info```, you will find that it is empty.  This is where we can 
 customize this endpoint.  Let's include build and git details information of the project here:
