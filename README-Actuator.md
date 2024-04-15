@@ -329,12 +329,13 @@ NOTE: Below excerpt from: [https://reflectoring.io/spring-boot-info-endpoint/](h
 Spring collects useful application information from various ```InfoContributor``` beans defined in the application 
 context. Below is a summary of the default ```InfoContributor``` beans:
 
-| ID	  | Bean Name	              | Usage                                                                  |
-|--------|---------------------------|------------------------------------------------------------------------|
-| build  | BuildInfoContributor	  | Exposes build information.                                             |
-| env	  | EnvironmentInfoContributor| Exposes any property from the Environment whose name starts with info. |
-| git	  | GitInfoContributor	      | Exposes Git related information.                                       |
-| java	  | JavaInfoContributor	      | Exposes Java runtime information.                                      |
+| ID	 | Bean Name	              | Usage                                                                  |
+|-------|----------------------------|------------------------------------------------------------------------|
+| build | BuildInfoContributor	      | Exposes build information.                                             |
+| env	 | EnvironmentInfoContributor | Exposes any property from the Environment whose name starts with info. |
+| git	 | GitInfoContributor	      | Exposes Git related information.                                       |
+| java	 | JavaInfoContributor	      | Exposes Java runtime information.                                      |
+| os	 | OsInfoContributor	      | Exposes OS information.                                                |
 
 By default, the ```env``` and ```java``` contributors are disabled.
 
@@ -551,6 +552,11 @@ By default, the ```env``` and ```java``` contributors are disabled.
    
    }
    ```
+5. Add an 'OS' contribution to this ```/info``` endpoint and write a corresponding test for it.
+
+### Problem Statement
+Write a ```DockerInfoContributor``` that shows the version of the engine on which Docker is running and the
+port, volume mapped information.
 
 ## Customizing the ```/metrics``` Endpoint
 
