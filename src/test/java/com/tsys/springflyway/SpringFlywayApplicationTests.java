@@ -29,6 +29,6 @@ class SpringFlywayApplicationTests {
 		assertNotNull(context);
 		assertNotNull(dataSource);
 		final String url = dataSource.getConnection().getMetaData().getURL();
-		assertThat(url, is("jdbc:mysql://localhost:3306/flywaydemo"));
+		assertThat(url, is("jdbc:h2:mem:flywaydemodb"));
 	}
 }
