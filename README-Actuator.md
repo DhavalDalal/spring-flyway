@@ -904,6 +904,26 @@ public class UserControllerSpecs {
 }
 ```
 
+Now, make a request to - http://localhost:8080/users and visit http://localhost:8080/actuator/metrics/api.users.total
+and you should see something similar to this:
+
+```json
+{
+  "name": "api.users.total",
+  "description": "total number of users in the system",
+  "measurements": [
+    {
+      "statistic": "VALUE",
+      "value": 3.0
+    }
+  ],
+  "availableTags": [
+    
+  ]
+}
+```
+
+
 ### Implementing Timers
 Let us now measure the time taken by the API to Get All the users from the database.
 
@@ -1122,9 +1142,37 @@ public class UserControllerSpecs {
 }
 ```
 
-After getting a green bar, lets start the Application and make sure you create a few users
-and update a few as well and see what all we get at the http://localhost:8080/actuator/metrics endpoint.  
-You will see something similar:
+After getting a green bar, lets start the Application and make sure you create a few users and
+point the browser to http://localhost:8080/actuator/metrics/api.users.get_all.time
+and you should see something similar:
+
+```json
+{
+   "name": "api.users.get_all.time",
+   "description": "Time taken to get all the users from repository",
+   "baseUnit": "seconds",
+   "measurements": [
+      {
+         "statistic": "COUNT",
+         "value": 3.0
+      },
+      {
+         "statistic": "TOTAL_TIME",
+         "value": 0.374272286
+      },
+      {
+         "statistic": "MAX",
+         "value": 0.174272286
+      }
+   ],
+   "availableTags": [
+
+   ]
+}
+```
+
+Now create a few more users and update a few as well and see what all we get at 
+the http://localhost:8080/actuator/metrics endpoint.  You will see something similar:
 
 ```json
 {
