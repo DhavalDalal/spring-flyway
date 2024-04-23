@@ -641,7 +641,7 @@ application metrics and the metrics infrastructure developed by different monito
 New Relic, Amazon Cloud Watch, Elastic etc... Think it to be like SLF4J, but for observability.
 
 
-**Micrometer Concepts**
+### Micrometer Concepts
 
 Let us look at the abstractions Micrometer provides:
 * ```Meter``` - is the interface for collecting a set of measurements or metrics about the application.
@@ -674,6 +674,7 @@ In order to gather custom metrics, we have support for:
 
 We now implement custom metrics into the ```/metrics``` end-point.
 
+### Implementing Counter
 Let's say we want to count how many times ```/ping``` was called.  For that matter
 of fact you can choose any endpoint available in the application like the
 login to log failed and successful attempts, count the number of downloads etc...
@@ -823,9 +824,8 @@ revisit http://localhost:8080/actuator/metrics/api.ping.get and you should see t
 }
 ```
 
-Let us now add two more meters -
-* A Gauge for measuring total number of users in the system
-* Time taken by the API to Get All the users from the database.
+### Implementing Gauge
+Let us now add a Gauge for measuring total number of users in the system
 
 ```java
 @RestController
@@ -849,63 +849,8 @@ public class UserController {
 
    ...
    ...
-   
-   @GetMapping()
-   public ResponseEntity<List<User>> getAll() {
-      Timer.Sample timer = Timer.start(meterRegistry);
-      final List<User> users = repository.findAll();
-      timer.stop(Timer.builder(api.users.get_all.time")
-           .description("Time taken to get all the users from repository")
-           .publishPercentileHistogram(true)
-           .percentilePrecision(2)
-           .publishPercentiles(0.95, 0.75, 0.50, 0.25)
-           .register(meterRegistry));
-
-      totalUsers.set(users.size());      
-      return ResponseEntity.ok(users);
-   }
-   
-   ...
-   ...
 }
 ```
-
-
-**Percentiles and Averages**
-
-1. **25th Percentile** - Also known as the first, or lower, quartile. The 25th percentile
-   is the value at which 25% of the answers lie below that value, and 75% of the answers lie
-   above that value.
-
-2. **50th percentile (median)** - The 50th percentile or median is the value in the very middle of a set of measurements.
-   In other words, 50% of measurements are under the median and 50% are over the median.  Use the median as the
-   "best case" when it comes to performance data, since it only represents what
-   half of your users will experience. The median is typically a stable measurement, so it's good for seeing
-   long-term trends. However, the median will typically not show short-term trends or anomalies.
-
-3. **75th percentile** - The 75th percentile is the value where 75% of all measurements are under it, and 25% of
-   measurements are over it.  It is the percentile that Google recommends using when monitoring Web Vitals.
-
-4. **95th percentile** - The 95th percentile is the value where 95% of all measurements are under it, and 5% of
-   measurements are over it. Use the 95th percentile to encompasses the experience of almost all of your users,
-   with only the most severe outliers excluded. This makes it perfect for spotting short-term trends and anomalies.
-   However, the 95th percentile can be volatile, and may not be suitable for plotting long-term trends.
-
-5. **Average (arithmetic mean)** - The average is calculated by adding every measurement together, and then
-   dividing it by the number of measurements. One important and slightly confusing thing about the average
-   measurement is: it doesn't exist!
-
-   What does that mean? Consider the following measurements: 2, 3, 5, 7. The average of these measurements
-   is (2 + 3 + 5 + 7) / 4 = 4.25. But none of the measurements have a value of 4.25! This is why you might hear people
-   say things like "the average person doesn't exist". Due to this, use averages sparingly.
-
-   Averages are _best used to aggregate measurements that have a relatively even distribution_, which means that all
-   the bars in the histogram are roughly the same height.
-
-   Averages are _not suitable for aggregating measurements with highly varied distributions_, for example, most
-   performance data does not have an even distribution. With such varying distributions, averages will produce
-   inconsistent values across different metrics.
-
 
 and the Corresponding tests in the ControllerSpecs would be:
 
@@ -928,30 +873,8 @@ public class UserControllerSpecs {
     client.delete(String.format("/users/%d", krishnaSaved.getId()));
   }
    
-  @Test
-  public void getAllUsersCapturesTimeTakenByTheRequestToRespondMetric() {
-    // Given
-    client.getForEntity("/users", List.class);
-    final String metricName = "api.users.get_all.time";
-
-    // When
-    final ResponseEntity<Map> executionTimeMetric = client.getForEntity(String.format("/actuator/metrics/%s", metricName), Map.class);
-
-    // Then
-    assertResponseIs200OK(executionTimeMetric);
-
-    final Map metric = executionTimeMetric.getBody();
-    assertThat(metric.get("name"), is(metricName));
-    assertThat(metric.get("description"), is("Time taken to get all the users from repository"));
-    assertThat(metric.get("baseUnit"), is("seconds"));
-    final List<Map<String, ?>> measurements = (List<Map<String, ?>>) metric.get("measurements");
-    final Map<String, ?> callCount = measurements.get(0);
-    assertThat(callCount.get("value"), is(2.0d));
-    final Map<String, Double> totalTime = (Map<String, Double>) measurements.get(1);
-    assertTrue(totalTime.get("value") > 0d);
-    final Map<String, Double> maxTime = (Map<String, Double>) measurements.get(2);
-    assertTrue(maxTime.get("value") > 0d);
-  }
+  ...
+  ...
 
   @Test
   public void getAllUsersCapturesTotalNumberOfUsersMetricInTheSystem() {
@@ -978,6 +901,114 @@ public class UserControllerSpecs {
     assertThat(response.getStatusCode(), is(HttpStatus.OK));
     assertThat(response.getHeaders().getContentType(), is(new MediaType("application", "json")));
   }
+}
+```
+
+### Implementing Timers
+Let us now measure the time taken by the API to Get All the users from the database.
+
+```java
+@RestController
+@RequestMapping("/users")
+@Slf4j
+public class UserController {
+  
+   ...
+   ...
+   
+   @GetMapping()
+   public ResponseEntity<List<User>> getAll() {
+      Timer.Sample timer = Timer.start(meterRegistry);
+      final List<User> users = repository.findAll();
+      timer.stop(Timer.builder(api.users.get_all.time")
+           .description("Time taken to get all the users from repository")
+           .publishPercentileHistogram(true)
+           .percentilePrecision(2)
+           .publishPercentiles(0.95, 0.75, 0.50, 0.25)
+           .register(meterRegistry));
+
+      totalUsers.set(users.size());      
+      return ResponseEntity.ok(users);
+   }
+   
+   ...
+   ...
+}
+```
+
+#### Percentiles and Averages
+
+1. **25th Percentile** - Also known as the first, or lower, quartile. The 25th percentile
+   is the value at which 25% of the answers lie below that value, and 75% of the answers lie
+   above that value.
+
+2. **50th percentile (median)** - The 50th percentile or median is the value in the very middle of a set of
+   measurements.  The median cuts the data set in half.  Half of the answers lie below the median and half lie
+   above the median.  In other words, 50% of measurements are under the median and 50% are over the median.
+   _The median is typically a stable measurement, so it's good for seeing long-term trends. However, the median
+   will typically not show short-term trends or anomalies._  Use the median as the "best case" when it comes to
+   performance data, since it only represents what half of your users will experience.
+
+3. **75th percentile** - Also known as the third, or upper, quartile.  The 75th percentile is the value where
+   75% of all measurements are under it, and 25% of measurements are over it.  It is the percentile that Google
+   recommends using when monitoring web vitals like - time to first byte, render time of the largest image or text
+   block visible in the viewport, relative to when the user first navigated to the page, etc...  The 75th percentile
+   is a good balance of representing the vast majority of measurements, and not being impacted by outliers.
+   _While not as stable as the median, the 75th percentile is a good choice for seeing medium- to long-term trends._
+
+4. **95th percentile** - The 95th percentile is the value where 95% of all measurements are under it, and 5% of
+   measurements are over it. Use the 95th percentile to encompasses the experience of almost all of your users,
+   with only the most severe outliers excluded. _This makes it perfect for spotting short-term trends and anomalies.
+   However, the 95th percentile can be volatile, and may not be suitable for plotting long-term trends._
+
+5. **Average (arithmetic mean)** - The average is calculated by adding every measurement together, and then
+   dividing it by the number of measurements. One important and slightly confusing thing about the average
+   measurement is: it doesn't exist!
+
+   What does that mean? Consider the following measurements: 2, 3, 5, 7. The average of these measurements
+   is (2 + 3 + 5 + 7) / 4 = 4.25. But none of the measurements have a value of 4.25! This is why you might hear people
+   say things like "the average person doesn't exist". Due to this, use averages sparingly.
+
+   Averages are _best used to aggregate measurements that have a relatively even distribution_, which means that all
+   the bars in the histogram are roughly the same height.
+
+   Averages are _not suitable for aggregating measurements with highly varied distributions_, for example, most
+   performance data does not have an even distribution. With such varying distributions, averages will produce
+   inconsistent values across different metrics.
+
+and the Corresponding tests in the ControllerSpecs would be:
+
+```java
+public class UserControllerSpecs {
+
+  ...
+  ...
+   
+  @Test
+  public void getAllUsersCapturesTimeTakenByTheRequestToRespondMetric() {
+    // Given
+    client.getForEntity("/users", List.class);
+    final String metricName = "api.users.get_all.time";
+
+    // When
+    final ResponseEntity<Map> executionTimeMetric = client.getForEntity(String.format("/actuator/metrics/%s", metricName), Map.class);
+
+    // Then
+    assertResponseIs200OK(executionTimeMetric);
+
+    final Map metric = executionTimeMetric.getBody();
+    assertThat(metric.get("name"), is(metricName));
+    assertThat(metric.get("description"), is("Time taken to get all the users from repository"));
+    assertThat(metric.get("baseUnit"), is("seconds"));
+    final List<Map<String, ?>> measurements = (List<Map<String, ?>>) metric.get("measurements");
+    final Map<String, ?> callCount = measurements.get(0);
+    assertThat(callCount.get("value"), is(2.0d));
+    final Map<String, Double> totalTime = (Map<String, Double>) measurements.get(1);
+    assertTrue(totalTime.get("value") > 0d);
+    final Map<String, Double> maxTime = (Map<String, Double>) measurements.get(2);
+    assertTrue(maxTime.get("value") > 0d);
+  }
+
 }
 ```
 
