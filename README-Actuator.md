@@ -870,6 +870,43 @@ public class UserController {
 }
 ```
 
+
+**Percentiles and Averages**
+
+1. **25th Percentile** - Also known as the first, or lower, quartile. The 25th percentile
+   is the value at which 25% of the answers lie below that value, and 75% of the answers lie
+   above that value.
+
+2. **50th percentile (median)** - The 50th percentile or median is the value in the very middle of a set of measurements.
+   In other words, 50% of measurements are under the median and 50% are over the median.  Use the median as the
+   "best case" when it comes to performance data, since it only represents what
+   half of your users will experience. The median is typically a stable measurement, so it's good for seeing
+   long-term trends. However, the median will typically not show short-term trends or anomalies.
+
+3. **75th percentile** - The 75th percentile is the value where 75% of all measurements are under it, and 25% of
+   measurements are over it.  It is the percentile that Google recommends using when monitoring Web Vitals.
+
+4. **95th percentile** - The 95th percentile is the value where 95% of all measurements are under it, and 5% of
+   measurements are over it. Use the 95th percentile to encompasses the experience of almost all of your users,
+   with only the most severe outliers excluded. This makes it perfect for spotting short-term trends and anomalies.
+   However, the 95th percentile can be volatile, and may not be suitable for plotting long-term trends.
+
+5. **Average (arithmetic mean)** - The average is calculated by adding every measurement together, and then
+   dividing it by the number of measurements. One important and slightly confusing thing about the average
+   measurement is: it doesn't exist!
+
+   What does that mean? Consider the following measurements: 2, 3, 5, 7. The average of these measurements
+   is (2 + 3 + 5 + 7) / 4 = 4.25. But none of the measurements have a value of 4.25! This is why you might hear people
+   say things like "the average person doesn't exist". Due to this, use averages sparingly.
+
+   Averages are _best used to aggregate measurements that have a relatively even distribution_, which means that all
+   the bars in the histogram are roughly the same height.
+
+   Averages are _not suitable for aggregating measurements with highly varied distributions_, for example, most
+   performance data does not have an even distribution. With such varying distributions, averages will produce
+   inconsistent values across different metrics.
+
+
 and the Corresponding tests in the ControllerSpecs would be:
 
 ```java
