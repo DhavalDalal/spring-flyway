@@ -849,6 +849,16 @@ public class UserController {
 
    ...
    ...
+
+   @GetMapping()
+   public ResponseEntity<List<User>> getAll() {
+      final List<User> users = repository.findAll();
+      totalUsers.set(users.size());
+      return ResponseEntity.ok(users);
+   }
+
+   ...
+   ...
 }
 ```
 
