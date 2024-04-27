@@ -989,7 +989,12 @@ public class UserController {
 4. **95th percentile** - The 95th percentile is the value where 95% of all measurements are under it, and 5% of
    measurements are over it. Use the 95th percentile to encompasses the experience of almost all of your users,
    with only the most severe outliers excluded. _This makes it perfect for spotting short-term trends and anomalies.
-   However, the 95th percentile can be volatile, and may not be suitable for plotting long-term trends._
+   However, the 95th percentile can be volatile, and may not be suitable for plotting long-term trends._  Historically,
+   a lot of services are defined as something like "the p95 latency may not exceed 0.25 seconds."  A way of phrasing
+   this same requirement so that we do get an accurate number of how close we are to violating our service level is
+   "the proportion of requests in which latency exceeds 0.25 seconds must be less than 5 percent."  Instead of
+   approximating the p95 and seeing if it’s below or above 0.25 seconds, we precisely define the percentage of requests
+   exceeding 0.25 seconds.
 
 5. **Average (arithmetic mean)** - The average is calculated by adding every measurement together, and then
    dividing it by the number of measurements. One important and slightly confusing thing about the average
