@@ -944,25 +944,25 @@ Let us now measure the time taken by the API to Get All the users from the datab
 public class UserController {
   
    ...
-   ...
-   
+           ...
+
    @GetMapping()
    public ResponseEntity<List<User>> getAll() {
       Timer.Sample timer = Timer.start(meterRegistry);
       final List<User> users = repository.findAll();
       timer.stop(Timer.builder(api.users.get_all.time")
-           .description("Time taken to get all the users from repository")
-           .publishPercentileHistogram(true)
-           .percentilePrecision(2)
-           .publishPercentiles(0.95, 0.75, 0.50, 0.25)
-           .register(meterRegistry));
+              .description("Time taken to get all the users from repository")
+              .publishPercentileHistogram(true)
+              .percentilePrecision(2)
+              .publishPercentiles(0.95, 0.75, 0.50, 0.25)
+              .register(meterRegistry));
 
-      totalUsers.set(users.size());      
+      totalUsers.set(users.size());
       return ResponseEntity.ok(users);
    }
    
    ...
-   ...
+           ...
 }
 ```
 
@@ -1017,33 +1017,62 @@ and the Corresponding tests in the ControllerSpecs would be:
 public class UserControllerSpecs {
 
   ...
-  ...
-   
-  @Test
-  public void getAllUsersCapturesTimeTakenByTheRequestToRespondMetric() {
-    // Given
-    client.getForEntity("/users", List.class);
-    final String metricName = "api.users.get_all.time";
+          ...
 
-    // When
-    final ResponseEntity<Map> executionTimeMetric = client.getForEntity(String.format("/actuator/metrics/%s", metricName), Map.class);
+   @Test
+   public void getAllUsersCapturesTimeTakenByTheRequestToRespondMetric() {
+      // Given
+      client.getForEntity("/users", List.class);
+      final String metricName = "api.users.get_all.time";
 
-    // Then
-    assertResponseIs200OK(executionTimeMetric);
+      // When
+      final ResponseEntity<Map> executionTimeMetric = client.getForEntity(String.format("/actuator/metrics/%s", metricName), Map.class);
 
-    final Map metric = executionTimeMetric.getBody();
-    assertThat(metric.get("name"), is(metricName));
-    assertThat(metric.get("description"), is("Time taken to get all the users from repository"));
-    assertThat(metric.get("baseUnit"), is("seconds"));
-    final List<Map<String, ?>> measurements = (List<Map<String, ?>>) metric.get("measurements");
-    final Map<String, ?> callCount = measurements.get(0);
-    assertThat(callCount.get("value"), is(2.0d));
-    final Map<String, Double> totalTime = (Map<String, Double>) measurements.get(1);
-    assertTrue(totalTime.get("value") > 0d);
-    final Map<String, Double> maxTime = (Map<String, Double>) measurements.get(2);
-    assertTrue(maxTime.get("value") > 0d);
-  }
+      // Then
+      assertResponseIs200OK(executionTimeMetric);
 
+      final Map metric = executionTimeMetric.getBody();
+      assertThat(metric.get("name"), is(metricName));
+      assertThat(metric.get("description"), is("Time taken to get all the users from repository"));
+      assertThat(metric.get("baseUnit"), is("seconds"));
+      final List<Map<String, ?>> measurements = (List<Map<String, ?>>) metric.get("measurements");
+      final Map<String, ?> callCount = measurements.get(0);
+      assertThat(callCount.get("value"), is(2.0d));
+      final Map<String, Double> totalTime = (Map<String, Double>) measurements.get(1);
+      assertTrue(totalTime.get("value") > 0d);
+      final Map<String, Double> maxTime = (Map<String, Double>) measurements.get(2);
+      assertTrue(maxTime.get("value") > 0d);
+   }
+
+}
+```
+
+After getting a green bar, lets start the Application and make sure you create a few users and
+point the browser to http://localhost:8080/actuator/metrics/api.users.get_all.time
+and you should see something similar:
+
+```json
+{
+   "name": "api.users.get_all.time",
+   "description": "Time taken to get all the users from repository",
+   "baseUnit": "seconds",
+   "measurements": [
+      {
+         "statistic": "COUNT",
+         "value": 3.0
+      },
+      {
+         "statistic": "TOTAL_TIME",
+         "value": 0.374272286
+      },
+      {
+         "statistic": "MAX",
+         "value": 0.174272286
+      }
+   ],
+   "availableTags": [
+
+   ]
 }
 ```
 
@@ -1157,36 +1186,7 @@ public class UserControllerSpecs {
 }
 ```
 
-After getting a green bar, lets start the Application and make sure you create a few users and
-point the browser to http://localhost:8080/actuator/metrics/api.users.get_all.time
-and you should see something similar:
-
-```json
-{
-   "name": "api.users.get_all.time",
-   "description": "Time taken to get all the users from repository",
-   "baseUnit": "seconds",
-   "measurements": [
-      {
-         "statistic": "COUNT",
-         "value": 3.0
-      },
-      {
-         "statistic": "TOTAL_TIME",
-         "value": 0.374272286
-      },
-      {
-         "statistic": "MAX",
-         "value": 0.174272286
-      }
-   ],
-   "availableTags": [
-
-   ]
-}
-```
-
-Now create a few more users and update a few as well and see what all we get at 
+Now create a few more users and update a few as well and see what all we get at
 the http://localhost:8080/actuator/metrics endpoint.  You will see something similar:
 
 ```json
@@ -1202,3 +1202,14 @@ the http://localhost:8080/actuator/metrics endpoint.  You will see something sim
    ]
 }
 ```
+Instead of adding @Timed notation to individual methods, you can add it to the
+whole class like this:
+
+```java
+//@Timed(value = "api.users", histogram = true, percentiles = {0.95, 0.75, 0.5, 0.25})
+public class UserController {
+   ...
+}
+```
+
+and each method will appear in the tag.
