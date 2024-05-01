@@ -73,6 +73,10 @@ automating the deployment of database changes.  It has following features:
 4. When Spring Boot detects Flyway on the classpath, it will run it on 
 startup.
 
+## (Re-)Generate IDE Specific files
+* To generate or regenerate after adding/removing a new dependency, for creating an Eclipse project: use ```gradle cleanEclipse eclipse```
+* To generate or regenerate after adding/removing a new dependency, for creating an Idea project: use ```gradle cleanIdea idea```
+
 ## Prepare MySQL Database
 ### Using Local Installation of MySQL Server
 1. Run the following commands after starting the mysql server using
