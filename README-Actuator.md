@@ -1213,3 +1213,214 @@ public class UserController {
 ```
 
 and each method will appear in the tag.
+
+
+## Using Prometheus to Monitor Application Metrics
+
+![SpringBoot-Actuator+Micrometer+Prometheus.png](images%2FSpringBoot-Actuator%2BMicrometer%2BPrometheus.png)
+
+### What is Prometheus?
+It is an open-source systems monitoring and alerting toolkit originally built at
+[SoundCloud](https://soundcloud.com/). It is basically a data-acquisition and aggregating tool.
+Whereas tools like Grafana, Kibana are data visualization tools.  Prometheus visualization is not rich,
+it is a bare and raw.  Hence, people use Grafana on top of it for proper data visualization and
+making sense of it. It is now a standalone open source project and maintained independently of any company.
+
+Prometheus is designed for reliability, to be the system you go to during an outage to
+allow you to quickly diagnose problems. Each Prometheus server is standalone, not depending
+on network storage or other remote services. You can rely on it when other parts of your
+infrastructure are broken, and you do not need to setup extensive infrastructure to use it.
+Prometheus works well for recording any purely numeric time series. It fits both machine-centric
+monitoring as well as monitoring of highly dynamic service-oriented architectures. In a world of
+microservices, its support for multi-dimensional data collection and querying is a particular strength.
+
+### Time-Series Data and Scraping
+Prometheus fundamentally stores all data as time series: streams of timestamped values belonging to the
+same metric and the same set of labeled dimensions. Besides stored time series, Prometheus may generate
+temporary derived time series as the result of queries.
+
+Prometheus operates on a pull model by scraping metrics from an endpoint exposed by the application
+instances at fixed intervals.  It scrapes metrics from instrumented jobs, either directly or via an intermediary
+push gateway for short-lived jobs. It stores all scraped samples locally and runs rules over this
+data to either aggregate and record new time series from existing data or generate alerts.
+While you can use out-of-box Dashboard & Graph from Prometheus, you may use Grafana or other API
+consumers to visualize the collected data.
+
+   ```text
+    Value
+      ^
+      |                 
+      |                 
+      +                       x
+      |   
+      |                   x
+      +               x
+      |        x    x 
+      |        
+      + x   x
+      |
+      |
+      +-----+-----+-----+-----+-----+-----+-----> 
+            1m    2m    3m    4m   
+                   Time   
+   ```
+
+Not only technical metrics, but you may use Prometheus for business metrics.  But avoid using it for
+100% accuracy to capture per-request stuff.  Google Analytics is another good choice for business
+metrics as you don't have to write much code.
+
+### Prometheus' Features
+Prometheus' main features are:
+
+* a multi-dimensional data model with time series data identified by metric name and key/value pairs
+* ```PromQL```, a flexible query language to leverage this dimensionality
+* no reliance on distributed storage; single server nodes are autonomous
+* time series collection happens via a pull model over HTTP
+* pushing time series is supported via an intermediary gateway
+* targets are discovered via service discovery or static configuration
+* multiple modes of graphing and dashboarding support
+
+### Prometheus' Components
+The Prometheus ecosystem consists of multiple components, many of which are optional:
+
+* the main Prometheus server which scrapes and stores time series data
+* client libraries for instrumenting application code
+* a push gateway for supporting short-lived jobs
+* special-purpose exporters for services like HAProxy, StatsD, Graphite, etc.
+* an alertmanager to handle alerts
+* various support tools
+
+![prometheus-architecture.png](images%2Fprometheus-architecture.png)
+
+### 1. Enable Prometheus Endpoint On Actuator
+We need to add a Gradle Dependency ```micrometer-registry-prometheus``` in order to convert our metrics
+in Micrometer-based format to Prometheus format so as to be able to monitor from Prometheus.
+
+1. Add the following line to ```build.gradle```'s dependency section:
+
+   ```groovy
+   dependencies {
+      ...
+      implementation 'io.micrometer:micrometer-registry-prometheus'
+      ...
+   }
+
+2. Run ```./gradlew cleanIdea idea```
+3. Enable the prometheus endpoint on Actuator:
+   ```properties
+   management.endpoints.web.exposure.include = ..., ..., prometheus
+   management.endpoint.prometheus.enabled = true
+   ```
+   Point the browser to http://localhost:8080/actuator/prometheus and you should see
+   something similar:
+
+   ```
+   # HELP jdbc_connections_idle Number of established but idle connections.
+   # TYPE jdbc_connections_idle gauge
+   jdbc_connections_idle{name="dataSource",} 10.0
+   # HELP jvm_gc_live_data_size_bytes Size of long-lived heap memory pool after reclamation
+   # TYPE jvm_gc_live_data_size_bytes gauge
+   jvm_gc_live_data_size_bytes 0.0
+   # HELP jvm_threads_started_threads_total The total number of application threads started in the JVM
+   # TYPE jvm_threads_started_threads_total counter
+   jvm_threads_started_threads_total 32.0
+   # HELP jvm_gc_pause_seconds Time spent in GC pause
+   # TYPE jvm_gc_pause_seconds summary
+   jvm_gc_pause_seconds_count{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation",} 1.0
+   jvm_gc_pause_seconds_sum{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation",} 0.004
+   # HELP jvm_gc_pause_seconds_max Time spent in GC pause
+   # TYPE jvm_gc_pause_seconds_max gauge
+   jvm_gc_pause_seconds_max{action="end of minor GC",cause="G1 Evacuation Pause",gc="G1 Young Generation",} 0.004
+   ...
+   ...
+   ```
+   Locate our Ping Counter: ```api_ping_get``` in the above.
+
+4. Now make a few requests to endpoint where we have set-up our Gauges and Timers and then refresh to the
+   Prometheus endpoint and we should see those metrics.
+
+5. Add a corresponding ```/actuator/prometheus``` endpoint test in the ```FraudCheckerActuatorTest```:
+
+   ```java
+   public class SpringFlywayActuatorTest {
+     
+     ...
+     ... 
+      
+     @Test
+     public void actuatorPrometheusEndpointWorks() {
+       // Given-When
+       final ResponseEntity<Map> response = client.getForEntity("/actuator/prometheus", Map.class);
+   
+       // Then
+       assertThat(response.getStatusCode(), is(HttpStatus.OK));
+     }
+   }
+   ```
+
+
+### 2. Getting, Configuring and Running Prometheus
+1. Pull the latest Prometheus Image: ```docker pull prom/prometheus```
+2. Create Prometheus Configuration File ```prometheus-config.yml``` in the Project root directory.  In this file
+   we will add 2 jobs in Prometheus:
+   1. To scrape Prometheus itself.
+   2. To scrape the above metrics emitted from our application.
+
+   ```yaml
+   global:
+     scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+     evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+     # scrape_timeout is set to the global default (10s).
+   
+   # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+   rule_files:
+   # - "first_rules.yml"
+   # - "second_rules.yml"
+
+   scrape_configs:
+     # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+     - job_name: 'prometheus'
+       # metrics_path defaults to '/metrics'
+       # scheme defaults to 'http'.
+       static_configs:
+         - targets: ['127.0.0.1:9090']
+   
+     - job_name: 'Spring Flyway Demo - Prometheus'
+       metrics_path: '/actuator/prometheus'
+       scrape_interval: 5s
+       static_configs:
+         - targets: ['<DOCKER HOST IP OF OUR APP>:8080']
+   ```
+   This configuration will scrape the metrics at 5-second intervals.  
+   **NOTE:** Generally have same scrape interval for entire organization.
+   As we are using Docker to run Prometheus, we need to specify the IP address
+   of the host machine (run ```ifconfig``` or ```ipconfig```) instead of ```localhost``` while running in Docker
+
+3. Run the Prometheus Image:
+   1. Using Docker Desktop, Start the image and in the Optional Settings:
+      1. Ports section: add ```9090``` against ```9090/tcp```.
+      2. Volumes section: Add
+         1. Host Path: ```$PROJECT_DIR/prometheus-config.yml```
+         2. Container Path: ```/etc/prometheus/prometheus.yml```
+      3. In EXEC tab of the running container (which opens a shell),
+           ```
+           /prometheus $
+           /prometheus $ ls
+           # This shows the database files of prometheus
+           ```
+   2. Using the following command on CLI from within PROJECT_DIR:
+      1. ```docker run --name prometheus -p 9090:9090 -v prometheus-config.yml:/etc/prometheus/prometheus.yml prom/prometheus```
+         OR  ```docker run --name prometheus -d -p 127.0.0.1:9090:9090 prom/prometheus``` in detached mode.
+      2. From another terminal, let us connect to the container using shell:
+           ```
+           $> docker exec -it prometheus /bin/bash
+           /prometheus $
+           /prometheus $ ls
+           # This shows the database files of prometheus
+           ```
+
+4. Launch the Prometheus UI on http://localhost:9090 and you will see the Prometheus page.
+5. Check our application as a target in Prometheus by visiting the URL - http://localhost:9090/targets.  
+   You should see something similar:
+
+   ![Prometheus-Targets-Flyway.jpg](images%2FPrometheus-Targets-Flyway.jpg)
