@@ -1424,3 +1424,287 @@ in Micrometer-based format to Prometheus format so as to be able to monitor from
    You should see something similar:
 
    ![Prometheus-Targets-Flyway.jpg](images%2FPrometheus-Targets-Flyway.jpg)
+
+### 3. Visualizing Our Metrics Using Prometheus
+
+1. Let us go to: http://localhost:9090/graph and you should see a screen similar to the below
+   and check the ```Use Local Time``` and ```Enable Query History``` check boxes to enable them.
+
+   ![Prometheus-Graph-Screen.png](images%2FPrometheus-Graph-Screen.png)
+
+2. Let us set up the ```api_ping_get_total``` Count first by searching for it in the Expression
+   textbox and then Press Execute and it will generate the following Table and Graph Views:
+
+   * Table View:
+     ![Prometheus-Ping-Table-View.png](images%2FPrometheus-Ping-Table-View.png)
+
+   * Graph View:
+     ![Prometheus-Ping-Graph-View.png](images%2FPrometheus-Ping-Graph-View.png)
+
+   In reality the counter value never goes down, it can stay same over a period of time though.
+   But generally a plot would look like this:
+   ```text
+   
+    Value
+      ^
+      |                               /----
+      |                     /--------/
+      +     slope = rate   /|        
+      |           = Δv/Δt / | Δv
+      |                  /  | 
+      +                 /---|
+      |        /-------/ Δt
+      |       / 
+      +------/
+      |
+      |
+      +-----+-----+-----+-----+-----+-----+-----> 
+            1m    2m    3m    4m
+                   Time   
+   ```
+
+   The ```rate()``` function is always used with ```Counter``` and Prometheus will always add a suffix
+   ```_total``` to a ```Counter``` value.  Watch this video: https://youtu.be/09bR9kJczKM
+
+3. Like-wise add more panels one for each of the following metrics:
+   * ```api_users_total``` - Gauge
+   * ```api_users_get_all_time_seconds``` - Histogram.
+
+   What’s important to understand is that when you’re querying the histogram, you’re suddenly dealing with a time
+   series of histograms. The histogram metric itself contains a range of values–one for each point in time that a
+   scrape occurred–and each value represents a histogram.
+   * A Prometheus histogram consists of four elements:
+      * a ```_max``` maximum value of all the samples
+      * a ```_count``` counting the number of samples
+      * a ```_sum``` summing up the value of all samples and
+      * a set of multiple buckets ```_bucket``` with a label ```le``` which contains a count of all samples
+        whose value are less than or equal to the numeric value contained in the ```le``` label.  Prometheus histograms
+        are time series’.  Prometheus scrapes metrics from a process at intervals. Each time it scrapes a histogram
+        metric, it will receive a histogram - a cumulative histogram with "less than or equal to" buckets.  Each
+        histogram value–scraped at a scrape interval–summarises the distribution of values recorded by the process
+        since the last scrape.
+
+     This is what a Prometheus published buckets for our values may look like:
+     ```text
+     api_users_get_all_time_seconds_bucket{le="0.001"}  0
+     api_users_get_all_time_seconds_bucket{le="0.001048576"} 0
+     api_users_get_all_time_seconds_bucket{le="0.001398101"} 0
+     api_users_get_all_time_seconds_bucket{le="0.001747626"} 0
+     ...
+     ...
+     ...
+     api_users_get_all_time_seconds_bucket{le="22.906492245"} 5
+     api_users_get_all_time_seconds_bucket{le="28.633115306"} 5
+     api_users_get_all_time_seconds_bucket{le="30.0"} 5
+     api_users_get_all_time_seconds_bucket{le="+Inf"} 5
+     api_users_get_all_time_seconds_sum 0.176637462
+     api_users_get_all_time_seconds_count 5
+     ```   
+
+     Let us understand these buckets with a sample histogram representation:
+     ```text
+     http_request_duration_seconds_bucketf{le="0.025"} 20
+     http_request_duration_seconds_bucket{le="0.05"} 60
+     http_request_duration_seconds_bucket{le="0.1"} 90
+     http_request_duration_seconds_bucket{le="0.25"} 100
+     http_request_duration_seconds_bucket{le="+Inf"} 105
+     http_request_duration_seconds_sum 21.322
+     http_request_duration_seconds_count 105
+     ```
+     In this example, the first bucket is reporting 20, the second is reporting 60 (that’s 40 + previous 20),
+     the third bucket is reporting 90 (that’s 10 + 60 + 20), and so on.  So, Prometheus puts a sample in all
+     the buckets it fits in, not just the first bucket it fits in. In other words, the buckets are cumulative.
+
+     But, If you want to read your Prometheus histograms as percentiles, that we have already requested to be published,
+     then add an expression ```api_users_get_all_time_seconds``` in a new Panel and you should see something similar:
+
+     ```text
+     api_users_get_all_time_seconds{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus", quantile="0.95"}
+     api_users_get_all_time_seconds{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus", quantile="0.75"}
+     api_users_get_all_time_seconds{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus", quantile="0.5"}
+     api_users_get_all_time_seconds{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus", quantile="0.25"}
+     ```
+
+     However, if you want to read your Prometheus histograms as bespoke percentiles or quantiles to better understand
+     the distribution, then you would need to apply the ```histogram_quantile()``` function to
+     estimate the requested quantile.  For example, this graph shows a histogram as a quantile by applying
+     the ```histogram_quantile()``` function to measure a ```/check``` endpoint and calculate at what latency
+     90% of the requests finish:
+
+     ```histogram_quantile(0.9, rate(api_users_get_all_time_seconds_bucket[1m]))```
+
+4. Now let’s add a graph which will tell us what is the average time taken by ```findAll```, or ```getReferenceById```
+   to JPA Repository methods to execute.  Add a Panel and type:
+
+   ```
+   spring_data_repository_invocations_seconds_sum / spring_data_repository_invocations_seconds_count
+   ``` 
+   Notice metrics (suffix ```_sum```  and ```_count```) was added automatically.
+   Sometimes the single metric can have different variants, like _total, _sum, _count etc.
+   But this is just overall average, as we are having time as one of the axis, each metric
+   is a vector, hence we add the ```rate``` function to give us average response time over a certain
+   span - say 1 minute.
+
+   ```
+   rate(spring_data_repository_invocations_seconds_sum[1m]) / rate(spring_data_repository_invocations_seconds_count[1m])
+   ```
+
+### 4. Creating Custom Buckets For Histogram
+Now, what if we want to ask the following questions:
+1. How many requests were served in less than or equal to 1.5 seconds?
+2. How many requests were served in greater than 1.5 seconds?
+3. What proportion of the requests are smaller than 1.5 seconds?
+4. How many requests are in between 1 and 2 seconds?
+5. What response time is a quarter of the requests smaller than?
+
+Prometheus creates buckets according to its internal algorithm. However, if we want to ask specific
+questions like the above, then we cannot rely on it.  We need to create custom buckets.  Custom
+buckets can co-exist with Prometheus generated buckets and our published percentile histogram
+as well.  So, lets write some code to create custom buckets first. For this we will modify existing
+method ```getById``` in ```UserController``` to add a timer with ```sla```
+this time.  Using ```sla``` we can custom configure our buckets as shown below:
+
+```java
+import java.util.Random;
+
+public class UserController {
+  
+   ...
+
+   private final Random random = new Random();        
+   ...
+
+   @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+   public ResponseEntity<User> getById(@PathVariable(required = true) Long id) {
+      Timer.Sample timer = Timer.start(meterRegistry);
+      log.info(String.format("getById(), Got param = %d", id));
+
+      try {
+         final int randomMillis = randomNumberBetween(250, 2500);
+         log.info(String.format("getById(), Waiting for = %d ms before response", randomMillis));
+         Thread.sleep(randomMillis);
+      } catch (InterruptedException e) {
+         throw new RuntimeException(e);
+      }
+      final ResponseEntity<User> user = ResponseEntity.of(repository.findById(id));
+      timer.stop(Timer.builder("api.users.getById")
+              .description("Time taken to get user by Id")
+              .sla(Duration.of(500, MILLIS),
+                      Duration.of(1000, MILLIS),
+                      Duration.of(1500, MILLIS),
+                      Duration.of(2000, MILLIS),
+                      Duration.of(2500, MILLIS))
+              .register(meterRegistry));
+      return user;
+   }
+
+   private int randomNumberBetween(int lower, int upper) {
+      return random.nextInt(upper - lower) + lower;
+   }
+   ...
+}
+```
+
+Let us rebuild and restart the application and hit the above end-point about 5-10 times for data
+to accumulate for answering our questions.  You may see a similar response for ```api_users_getById_seconds_bucket```:
+
+```text
+api_users_getById_seconds_bucket{le="0.5",} 1.0
+api_users_getById_seconds_bucket{le="1.0",} 1.0
+api_users_getById_seconds_bucket{le="1.5",} 3.0
+api_users_getById_seconds_bucket{le="2.0",} 5.0
+api_users_getById_seconds_bucket{le="2.5",} 7.0
+api_users_getById_seconds_bucket{le="+Inf",} 7.0
+api_users_getById_seconds_count 7.0
+api_users_getById_seconds_sum 12.653704804
+```
+
+1. How many requests were served in less than or equal to 1.5 seconds?
+
+   This is really the base question for a Prometheus histogram. The answer is stored in the time series
+   database already and we don’t need to use either functions or arithmetics to answer the question:
+
+   ```text
+   api_users_getById_seconds_bucket{le="1.5"}
+   ```
+
+   **Answer**: ```{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus"} 3```
+
+
+2. How many requests were served in greater than 1.5 seconds?
+
+   We already know the number of requests less than or equal to 1.5 seconds and the total number of requests. Subtracting the number of smaller requests from the number of total requests will give us the remaining larger requests. There are two ways of getting the total count for a histogram:
+   1.  Using ```api_users_getById_seconds_count``` like this:
+       ```text
+       api_users_getById_seconds_count - ignoring(le) api_users_getById_seconds_bucket{le="1.5"}
+       ```
+   2. Using ```api_users_getById_seconds_bucket{le="+Inf"}``` like this:
+
+      ```text
+      api_users_getById_seconds_bucket{le="+Inf"} - ignoring(le) api_users_getById_seconds_bucket{le="1.5"}
+      ```
+
+   **Answer**: ```{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus"} 4```
+
+
+3. What proportion of the requests are smaller than 1.5 seconds?
+
+   We want this in relation to the total count.  If we divide the number of requests less than 1.5s by the total number of requests, we’ll get a ratio between the two which is what we want.
+
+   ```text
+   api_users_getById_seconds_bucket{le="1.5"} / ignoring (le) api_users_getById_seconds_count
+   ```
+
+   **Answer**: ```{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus"} 0.42857142857142855```
+
+
+4. How many requests are in between 1 and 2 seconds?
+
+   This is also quite straight-forward:
+
+   ```text
+   api_users_getById_seconds_bucket{le="2.0"} - ignoring (le) api_users_getById_seconds_bucket{le="1.0"}
+   ```
+
+   **Answer**: ```{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus"} 4```
+
+
+5. What time is a quarter of the requests smaller than?
+
+   This one is more complicated than the others. We don’t have an accurate answer to this question.
+   We can approximate an answer to this question using PromQL’s ```histogram_quantile``` function.
+   The function takes a ratio and the histogram’s buckets as input and returns an approximation of
+   the value at the point of the ratio’s quantile. (i.e. If 1s is the largest time and 0s is the
+   smallest time, how big would 0.75 be?)
+
+   The approximation is based on our knowledge of exactly how many values are above a particular
+   bucket and how many values are below it. This means we get an approximation which is somewhere
+   in the correct bucket.
+
+   If the approximated value is larger than the largest bucket (excluding the +Inf bucket),
+   Prometheus will give up and give you the value of the largest bucket’s le back.
+
+   With that caveat out of the way, we can make our approximation of the third quartile with the
+   following query:
+
+   ```text
+   histogram_quantile(0.75, api_users_getById_seconds_bucket)
+   ```
+
+   **Answer**: ```{instance="192.168.29.57:8080", job="Spring Flyway Demo - Prometheus"} 2.0625```
+
+   **Note:** When talking about service level, the precision of quantile estimations is relevant.
+   Historically, a lot of services are defined as something like "the p95 latency may not exceed
+   0.25 seconds."  Assuming we have a bucket for le=0.25, we can accurately answer whether or not
+   the p95 latency does exceed 0.25 or not.
+
+   However, since the p95 value is approximated, we cannot tell definitively if p95 is, say,
+   0.22 or 0.24 without a bucket in between the two.
+
+   A way of phrasing this same requirement so that we do get an accurate number of how close we are
+   to violating our service level is "the proportion of requests in which latency exceeds 0.25 seconds
+   must be less than 5 percent." Instead of approximating the p95 and seeing if it’s below or above
+   0.25 seconds, we precisely define the percentage of requests exceeding 0.25 seconds using the
+   methods from above.
+
+**NOTE**: We will cover visualizations of the above in Grafana Section.
