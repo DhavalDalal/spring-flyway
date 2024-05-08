@@ -1708,3 +1708,139 @@ api_users_getById_seconds_sum 12.653704804
    methods from above.
 
 **NOTE**: We will cover visualizations of the above in Grafana Section.
+
+## Customizing the ```/health``` Endpoint
+The /health endpoint is used to check the health or state of the running application.
+It is often used by monitoring software to alert someone when a production system goes down
+or gets unhealthy for other reasons, e.g., connectivity issues with our DB, lack of disk space, etc.
+
+By default, unauthorized users can only see status information when they access over HTTP.  The status ```UP```
+indicates that the application is running.  This is a derived-status from an evaluation of the health of
+many components called **Health Indicators** in a specific order.
+
+The status will show ```DOWN``` if any of those health indicator components
+are "unhealthy" - for instance, the database is not reachable.
+
+```json
+{
+  "status" : "UP"
+}
+```
+
+The information exposed by the health endpoint depends on the
+```management.endpoint.health.show-details``` and ```management.endpoint.health.show-components```
+properties which can be configured with one of the following values:
+
+```
+# Allowed values are never, when-authorized, always
+management.endpoint.health.show-components = always
+management.endpoint.health.show-details = when-authorized
+```
+
+Now point the browser to ```/health``` endpoint and  you should see
+something similar as response:
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "db": {
+      "status": "UP"
+    },
+    "diskSpace": {
+      "status": "UP"
+    },
+    "ping": {
+      "status": "UP"
+    }
+  }
+}
+```
+
+Now, you can change the property value ```management.endpoint.health.show-details = always``` and it will
+give all the details.  Check it out for yourself.
+
+To check the status of a particular component hit the endpoint ```/health/<component-name>```, for instance to view the
+```diskSpace``` component status, it is ```/health/diskSpace```:
+
+```json
+{
+  "status": "UP"
+}
+```
+
+If you have database, in your application, then break the network connection of the DB or shut the database down and
+then come back to this end-point.  You should see something similar:
+
+```json
+{
+  "status": "DOWN",
+  "components": {
+    "db": {
+      "status": "DOWN"
+    },
+    "diskSpace": {
+      "status": "UP"
+    },
+    "ping": {
+      "status": "UP"
+    }
+  }
+}
+```
+
+The aggregate status is - ```DOWN``` because one of the components, in this case,
+the database connection is ```DOWN```.  Bring it back up and the overall status and the
+individual DB status will turn ```UP```.
+
+Just as we had tests for the sub-components of ```/info``` endpoint, we add tests for the
+sub-components of the ```/health``` end-point.
+
+```java
+public class SpringFlywayActuatorTest {
+
+   ...
+   ...
+   
+  @Test
+  public void actuatorHealthEndpointHasPingStatus() {
+    // Given-When
+    final ResponseEntity<Map> response = client.getForEntity("/actuator/health", Map.class);
+
+    // Then
+    final Map<String, String> components = (Map<String, String>) response.getBody().get("components");
+    assertTrue(components.containsKey("ping"));
+  }
+  
+  @Test
+  public void actuatorHealthEndpointHasDiskSpaceStatus() {
+    // Given-When
+    final ResponseEntity<Map> response = client.getForEntity("/actuator/health", Map.class);
+
+    // Then
+    final Map<String, String> components = (Map<String, String>) response.getBody().get("components");
+    assertTrue(components.containsKey("diskSpace"));
+  }
+  
+  @Test
+  public void actuatorHealthEndpointHasDatabaseStatus() {
+    // Given-When
+    final ResponseEntity<Map> response = client.getForEntity("/actuator/health", Map.class);
+
+    // Then
+    final Map<String, String> components = (Map<String, String>) response.getBody().get("components");
+    assertTrue(components.containsKey("db"));
+  }
+}
+```
+
+Spring Boot Actuator comes with several out-of-box health indicators like:
+
+* ```DataSourceHealthIndicator``` - health check by this indicator creates a connection to a database
+  and issues a simple query - ```select 1 from dual``` to ensure that the ```DataSource``` is working.
+* ```MailHealthIndicator```
+* ```RedisHealthIndicator```
+  etc...
+
+Each of the above indicators is a Spring bean that implements the ```HealthIndicator``` interface and checks the
+health of that component.  
